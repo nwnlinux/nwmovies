@@ -1,0 +1,295 @@
+START 02/23/09 Notes. 
+
+Modify the method used by the preload to load libSDL, as based on some
+patches by Daniel Andrade.  
+
+More specifically, try RTLD_NEXT to dlsym(), and if that fails, manually 
+load the libSDL-1.2.so.0 library, and then use it to find the necessary
+symbols. 
+
+I guess this has been in beta long enough, call it a release, and be 
+done with it. 
+
+END 02/23/09 Notes. 
+
+START 05/09/08 Notes. 
+
+Version 4.0 Release
+
+No more dependancy on knowning which version of libSDL before hand, the 
+preload should use ld.so to load the libSDL library used, and go from 
+there. 
+
+No more patching libSDL for the fullscreen toggle.
+
+No more patching libSDL for nwmovies to work.
+
+Automatically raise the BinkPlayer window upon movie playback so 
+it is not hidden behind the frozen NWN movie. 
+
+Release the mouse and keyboard grab libSDL enforces when NWN is full screen,
+during movie playback so you can hit ESC to terminate movie playback. 
+
+Per some sample code from Skildron, enable a method to skip specific movies by
+placing the movie name in a 'nwmovies.skip' file. 
+
+Disable the mouse cursor during movie playback. (Also by Skildron.) 
+
+------------------------------------------------------------------------------
+START 05/XX/06 Notes.
+
+AMD x86_64 updates.  NWMovies (and friends) should not be a lot
+closer to working on 64 bit platforms, thanks to the efforts of
+Skildron, and Eyrdan on the NWN forums.  They supplied patches, and
+I adapted them into a build framework, and made certain nothing
+blew up on 32bit.
+
+My thanks to them!
+
+Note: You will need to install the appropriate 32bit devel packages
+for your distribution.   
+
+Due to the heavy use of LD_PRELOAD (and some (IMO) stupidity on Linux's
+part) you'll occasionally see errors out of ld.so stating that
+libraries can't be preloaded.  I've tried to minimize them, but
+until the concept of LD_PRELOAD32/LD_PRELOAD64 is implimented,
+you'll just have to cope.
+
+ex:
+ERROR: ld.so: object './nwmovies/binklib.so' from LD_PRELOAD cannot be preloaded: ignored.
+ERROR: ld.so: object './nwmovies/binklib.so' from LD_PRELOAD cannot be preloaded: ignored.
+
+See the bottom of nwmovies.README.softmix.txt for quicky instructions on 
+rebuilding a 32bit libSDL.  (As well as some settings if your Sound card
+does not support multiple simultaneous opens.)
+
+------------------------------------------------------------------------------
+START 01/10/06 Notes. 
+
+Wow, no updates at all in 2005. 
+
+This update is primarily due to the excellent detective work of 
+Benjamin 'Asaru' Dirks. 
+
+He located the bit of code that was disabling the Movies button on 
+the MainMenu.   It has now been "fixed" and works properly.
+
+Many thanks to him!
+
+Also note, I've modified the build/installation to require the
+libSDL path, as it seems with the newer distro's everyone was 
+needing to do it anyways.    
+
+If your not using the Bioware provided libSDL, and NWMovies spits out: 
+
+WARNING: NWMovies: SDL_WM_GrabInputRaw() not visible.  Looking for it the hard way.
+WARNING: NWMovies: This may not work.
+
+Then NWN crashes at the first movie, then NWMovies lookup didn't work. 
+
+The simplest fix is to build a newer libSDL with the fullscreen patches on my
+site.  Its not as complicated as it looks, and if you can build NWMovies successfully,
+your likely to be able to rebuild libSDL successfully. 
+
+Updated the nwmovies.pl script to prefer BinkPlayer, if this is a problem read
+the comments at the top of the script, and comment out the first binkplayer 
+setting.
+
+I also re-ordered these 'Notes'. :-)
+
+------------------------------------------------------------------------------
+START 06/24/04 Notes.
+
+Removed a #include <linux/user.h> forget the original reason it was
+needed. (Probably its from some example code I found when 
+writing this.) - Eitherway, it appears to be unnecessary, and was
+causing issues. 
+
+Also from a post by JonSvenJonsson, for the users who have 
+issues w/ NWMovies playing the video correctly, but no sound in the
+w/ the movies, please see the 'nwmovies.README.softmix.txt" text file.
+(It has ALSA settings, and (short) libSDL rebuild instructions) 
+
+And thirdly, w/ current NVidia drivers, NWN _DOES_ work in 
+16-bit display depth mode. (65535 colors) However, BinkPlayer,
+when used under NWMovies, gives strange colors.  BinkPlayer works 
+fine in 16bit mode when used stand-alone.  (Go figure). 
+
+The fix is to simply change your display depth to 24bit, (millions of colors).
+
+If NWMovies crashes after attempting to locate SDL_WM_GrabInputRaw()
+via the "hard way", in a non-Bioware libSDL, you'll need to rebuild
+libSDL w/ the minor static declaration patch mentioned in 
+nwmovies.README.softmix.txt. 
+
+Gentoo users may just be able to:  "FEATURES=nostrip emerge libsdl" to 
+avoid messing w/ the libSDL code. 
+
+------------------------------------------------------------------------------
+START 05/05/04 Notes. 
+
+1) 
+If NWMovies is not working for you, and the only lines in the nwmovies.log
+file are of the form: 
+
+./nwmovies.pl AtariLogo >> nwmovies.log 2>&1
+./nwmovies.pl BiowareLogo >> nwmovies.log 2>&1
+./nwmovies.pl WotcLogo >> nwmovies.log 2>&1
+./nwmovies.pl fge_logo_black >> nwmovies.log 2>&1
+./nwmovies.pl NWNIntro >> nwmovies.log 2>&1
+
+Make note of the libSDL NWMovies identifies when NWN starts up.  NWMovies
+will spit out a line like so: 
+
+NOTICE: SDL Library determined to be: ./lib/libSDL-1.2.so.0
+
+Rebuild NWMovies w/ nwmovies_install.pl, and specify the libSDL mentioned:  
+
+ex:   ./nwmovies_install.pl ./lib/libSDL-1.2.so.0
+
+This rebuilds nwmovies specifying some dependancies that are apparently 
+necessary on your system. 
+
+2) Eyrdan reports that NWMovies was not working for him.  Quote, "every
+other movie was just a black screen."    
+
+He's using a ATI card, and suggested commenting out the 
+'Option "EnablePageFlip" "True"' line in the XFree86 config file. 
+
+(My thanks to him. - Tis good when you can report a fix along w/ a problem. :) ) 
+------------------------------------------------------------------------------
+START 04/22/04 Notes
+Occasionally the NWN client will switch to windowed mode, after
+move playback. If you can, just minimize it, and then restore it to 
+get back to full screen mode.
+
+If you cannot minimize the window, you may attempt the new setting inside
+the nwmovies.ini file.  (NeedsToggle)
+
+To use this setting, Add the following line. (Or change, if it already exists)
+
+NeedsToggle 1 
+
+------------------------------------------------------------------------------
+START 10/26/03 Notes: 
+
+No code changes, just a couple of odd bits discovered on the net regarding
+NWMovies. 
+
+<quote>
+3. Your sound card *MUST* support at least two audio channels, since when it
+starts, NWN grabs one and mplayer has to be able to use another. Using ALSA
+and the cmipci driver, the only way to do this is to turn off the rear
+speakers in the mixer, and have mplayer use the /dev/adsp device in the perl
+script. If NWMovies hangs, its probably because it's trying to open /dev/dsp
+on a card with only one audio channel.
+</quote>
+
+If that means anything to anyone great.  :-) 
+
+Secondly, a user (Eljar) discovered that they couldn't get sound out of NWMovies 
+with SuSE 8.2 and ALSA drivers.   It appears that MPlayer couldn't open the audio
+device.    They finally got it to work by: 
+
+<quote>
+Updated alsa from 0.9.0 to 0.9.8
+Updated sdl from 1.2.5 to 1.2.6-1
+Updated MPlayer from 0.92 to 1.0pre2
+
+Then NWN started to crash if artsd was running.
+So I diabled arts. Still no movie sound. Then I stared
+esd (of Gnome) and it all runs nicley (I also run mplayer wit "-ao sdl").
+Since I don't normally use esd I added these lines to the
+nwn startup script to automate starting it:
+Before "./nwmain $@": /usr/bin/esd -nobeeps &
+After "./nwmain $@": /usr/bin/killall esd
+</quote>
+
+My theory is w/ the first quote, is that their sound card (or driver)
+only supports a single output stream.  Using ESD with NWN, and NWMovies
+does the sound multiplexing in software, and multiplexes it into a 
+single stream, which can then be successfully sent to the sound card. 
+It probably increases the CPU utilization of NWN somewhat, but if it 
+works...
+
+Perhaps that will be of use to someone. 
+
+------------------------------------------------------------------------------
+START 9/24/03 Notes: 
+
+Minor fix by Hesham Hassan.  
+
+If only .bik movies exist, nwmovies.pl  wouldn't figure out
+that they were there, and therefore wouldn't play anything. 
+
+------------------------------------------------------------------------------
+START 9/6/03 Notes: 
+
+More dinking w/ the stripped libSDL SDL_WM_GrabInputRaw() code.
+Now uses either the last call, or the last jmp, which ever is 
+last. 
+
+Also many thanks to Azlinon for usage of one of his Mandrake
+systems to finally track down (hopefully) the last remaining
+segfault bug. 
+
+Also change the Mplayer default output device to SDL, due to a 
+report that the x11 output device nolonger worked /w the latest
+version of Mplayer. 
+
+Also add parsing options to nwmovies.pl to determine screen resolution, 
+and scale the played movie to that resolution, so there are fewer
+resolution switches during movie playback. 
+
+And added a preference for mpg named files, if using plaympeg.
+
+------------------------------------------------------------------------------
+START 9/1/03 Notes: 
+
+Per a user requests, this should theoretically work with a stripped 
+libSDL.so.0.    (stripped libSDL's don't work real well as 
+SDL_WM_GrabInputRaw() is no longer 'visible' )
+
+It works by disassembling SDL_WM_GrabInput() to find the 
+last subroutine call.   On libSDL 1.2.5, this is the call to
+SDL_WM_GrabInput_Raw().    If SDL were to undergo a significant
+change, or perhaps major changes due to optimizer flags this will break. 
+
+If that's the case, well, your stuck, and will have to go back to the
+Bioware provided SDL. 
+
+------------------------------------------------------------------------------
+START 8/26/03 Notes: 
+
+1) Applied patches from Urban Widmark.    These patches should help 
+those users who were not using GCC-3.2.   It appears my 
+assembler is worse than I thought, and was only getting lucky that
+things were working at all.   This should help those who
+were getting strange crashes after playing the first movie. 
+
+And a recommendation from <someone> to move everything off into its own 
+subdirectory.
+
+Many thanks!
+
+2) Dynamic constant calculations.   The code has gotten alot bigger, however
+it is no longer hard coded to a specific release.     This is goodness..
+As if I were to get hit by a bus tomorrow, and 1.32 to come out the day
+after that, NWMovies might have a chance to still work on 1.32 w/ out 
+someone coming up with a header file for it. 
+
+Note: The first time you run NWN w/ NWMovies installed, it will calculate
+the necessary constants, store them in a 'nwmovies.ini' file, and
+then immediately exit.  Please run it a second time to actually get
+in the game. 
+
+Note: This code now contains other code based upon: 
+
+http://sourceforge.net/projects/bastard/
+
+I've hacked on the code, (and its a old version), so 
+please do not use the code for any other projects. 
+
+A copy of its original license is in ~/nwn/nwmovies/libdis/LICENSE.original. 
+
+------------------------------------------------------------------------------

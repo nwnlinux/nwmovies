@@ -1,0 +1,32 @@
+This code is originally from: 
+
+http://sourceforge.net/projects/bastard/
+
+(And is apparently an old version.)
+
+The original authors are: 
+
+# mammon_, mere coder
+# ReZiDeNt, Militant Dairy Activist
+# The Grugq, Chief Makefile Architect
+# MO_K, MIA Libi386 Enthusiast
+# a_p, Invisible Tester
+# fbj, Visible Tester
+
+I've just hacked on it enough to make it spit out the
+right opcodes for what I need it to do. 
+(They're probably incorrect modifications in a 
+general sense.  ERGO: Don't use my modified library
+for anything else.)
+
+However, I can recommend this library as a general
+disassembler, its got a useful API.  :-) 
+
+The original license is in LICENSE.original. 
+
+David Holland
+zzqzzq_zzq@hotmail.com
+
+
+
+

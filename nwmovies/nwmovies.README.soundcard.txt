@@ -1,0 +1,159 @@
+These are some notes regarding NWN, and the various options for sound. 
+
+Linux has multiple different ways to output sound, all with various
+benefits, and detractions.   They can be broken down multiple ways: 
+
+OSS
+ALSA
+
+ESD
+ARTSC
+PulseAudio
+
+----------------------------------------------------------------------------
+
+OSS:  The original sound API.  Fairly old, and not much in use. 
+ALSA: The "Advanced Linux Sound Architecture", the more modern sound API.
+
+With either sound API, presuming a correct install, one of the main source 
+of the "no sound" issue is rooted in the either sound API to support playing 
+multiple sounds, by multiple programs, at the same time. 
+
+OSS does not support multiple programs playing sounds, so basically, the
+first program to grab the sound device, gets it, and keeps it till its
+done. 
+
+ALSA will support multiple programs playing sound, if your sound card
+supports it, or you if you configure "software mixing" via something called
+DMIX.
+
+Note, this software mixing issue also effects NWMovies, as both NWN, and
+BinkPlayer often fight over the soundcard.  (BinkPlayer tends to lose. :) ) 
+
+----------------------------------------------------------------------------
+
+As a general rule, onboard sound devices tend to only support playing one
+sound at a time, where as dedicated sound cards tend support more than one. 
+
+If you examine the output of "cat /proc/asound/pcm" from a terminal window
+you can determine the number of simultaneous sounds ALSA can play at one
+time.   
+
+uholld1@crusader:~$ cat /proc/asound/pcm
+00-02: ALC883 Analog : ALC883 Analog : capture 2
+00-01: ALC883 Digital : ALC883 Digital : playback 1 : capture 1
+00-00: ALC883 Analog : ALC883 Analog : playback 1 : capture 2
+
+Note the last line.  There's only 1 Analog "playback" device.  IE: My
+soundcard can only play one sound at a time. 
+
+----------------------------------------------------------------------------
+
+To deal with the issue of only one playing one sound at a time, the concept
+of "software mixing" has evolved.   This has so far taken the form of a
+system daemon running in the background, or in ALSA's case something called
+DMIX that must be configured first. 
+
+The common daemons: 
+
+ESD:  Is generally used with the Gnome Desktop.
+ARTSC: Is generally used with the KDE Desktop.
+PulseAudio:  Is a very new sound system daemon, used in very new
+distributions, such as FedoraCore 9, and Ubuntu 8.04, and quite frankly, 
+I've no experience with it.
+
+DMIX is part of the ALSA API, and once configured, should be transparent. 
+
+The libSDL provided with NWN, in the NWN/lib directory is
+fairly old, and does not support ALSA, nor PulseAudio.
+
+----------------------------------------------------------------------------
+
+libSDL is supposed to be smart enough to choose the "best" audio driver
+that it supports, and is availble on your system.  
+
+As said above, the libSDL supplied with NWN is old, and does not support
+ALSA, nor PulseAudio.  The recommendation therefore is to modify the
+LD_LIBRARY_PATH entry in the nwn startup script, and remove the reference
+to "./lib".   NWN will then use the system libSDL, which is most likely
+much new, and supports more sound options.
+
+If you wish to override the audio driver selected, you may use the
+SDL_AUDIODRIVER environment variable to specify a specific audio driver.
+
+See: http://www.libsdl.org/cgi/docwiki.cgi/SDL_envvars for further details. 
+
+----------------------------------------------------------------------------
+
+The output of "nwmovies_install.pl" will hopefully give you some clues as
+to how your audio system is configured.
+
+In my opinion the safest and best bet for sound output is to go straight to
+ALSA, and use DMIX for software mixing, if necessary. 
+
+* If you need to configure DMIX, See below for a sample .asoundrc to save in
+your home directory. (My thanks to Skildron for supplying it)
+
+* Force libSDL to use ALSA by adding the following line to your NWN startup
+  script 'nwn'
+
+  export SDL_AUDIODRIVER=alsa
+
+* If you are currently using one of the sound system daemons, you will need
+  to shut it down before starting NWN. kk
+
+For ESD:         esdctl standby; ./nwn
+For ARTS:        artsshell suspend; ./nwn
+
+For PulseAudio:  pasuspender ./nwn
+
+----------------------------------------------------------------------------
+
+If you wish to investigate attempting to get NWN to work with your 
+currently running sound daemons the following may be of some use.
+
+* The manpage for "esddsp" 
+* The manpage for "artsdsp"
+
+The following webpage for PulseAudio:
+
+http://www.pulseaudio.org/wiki/PerfectSetup
+
+And of course, the http://www.libsdl.org/cgi/docwiki.cgi/SDL_envvars for 
+libSDL configuration.
+
+----------------------------------------------------------------------------
+Sample .asoundrc
+----------------------------------------------------------------------------
+
+pcm.!default {
+	type plug
+	slave.pcm "dmixer"
+}
+
+pcm.dsp0 {
+	type plug
+	slave.pcm "dmixer"
+}
+
+pcm.dmixer {
+	type dmix
+	ipc_key 1024
+	slave {
+		pcm "hw:0,0"
+		period_time 0
+		period_size 1024
+		buffer_size 8192
+		rate 48000
+	}
+	bindings {
+		0 0
+		1 1
+	}
+}
+
+ctl.dmixer {
+	type hw
+	card 0
+}
+

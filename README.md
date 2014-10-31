@@ -1,4 +1,1 @@
-nwmovies
-========
-
-NWN Linux Movies
+nwmovies.README.txt
