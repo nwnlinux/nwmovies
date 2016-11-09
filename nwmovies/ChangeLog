@@ -1,3 +1,17 @@
+START 06/14/13 Notes.
+
+Use internal parsing instead of calling external nwinstall.pl script. On 64-bit
+systems when using NWUser, as the 32-bit nwuser.so cannot be preloaded by
+64-bit commands and movie playing then fails due to permission denied while
+trying to write logfile in game directory rather than user directory.
+
+Switch to using ffplay from FFMpeg as it now supports Bink videos natively
+along with fullscreen scaling.
+
+Add "NWMOVIES_PLAY_COMMAND" enviroment variable to change player and options.
+
+END 06/14/13 Notes
+
 START 02/23/09 Notes. 
 
 Modify the method used by the preload to load libSDL, as based on some

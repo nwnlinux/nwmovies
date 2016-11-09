@@ -58,28 +58,25 @@ if( $machine =~ "x86_64" ) {
 $command = sprintf("%s %s %s -Wall -I%s/libdis -g -fPIC -shared -Wl,-soname,libdisasm.so %s/libdis/libdis.c %s/libdis/i386.c -o %s/libdis/libdisasm.so",
 			 $gcc, $cflags, $x86_64, $ndir, $ndir, $ndir, $ndir );
 do_exec($command); 
-$command = sprintf("%s %s %s -Wall -shared -g -Wl,-soname,binklib.so %s/binklib.c -o %s/binklib.so %s -ldl -Wl,-static -lelf -lm -Wl,-Bdynamic",
-			$gcc, $cflags, $x86_64, $ndir, $ndir, $ldflags ); 
-do_exec($command); 
 
-$command = sprintf("%s %s %s -Wall -shared -g -I/usr/include/libelf -I%s/libdis -o %s/nwmovies.so %s/nwmovies.c %s/nwmovies_lookup.c %s/nwmovies_cookie.c %s/nwmovies_link.S %s -ldl -Wl,-static -lelf -Wl,-Bdynamic", 
-			$gcc, $cflags, $x86_64,  $ndir, $ndir, $ndir, $ndir, $ndir, $ndir, $ldflags ); 
+$command = sprintf("%s %s %s -Wall -shared -g -I/usr/include/libelf -I%s/libdis -o %s/nwmovies.so %s/nwmovies.c %s/nwmovies_lookup.c %s/nwmovies_cookie.c %s/nwmovies_player.c %s/nwmovies_link.S %s -ldl -Wl,-static -lelf -Wl,-Bdynamic", 
+			$gcc, $cflags, $x86_64,  $ndir, $ndir, $ndir, $ndir, $ndir, $ndir, $ndir, $ldflags ); 
 do_exec($command); 
 
 # Install symlinks
 if( $ndir eq "." ) { 
 	chdir(".."); 
 }
-symlink("nwmovies/nwmovies.pl", "nwmovies.pl"); 
 symlink("nwmovies/nwmovies.so", "nwmovies.so"); 
 
 printf("\n"); 
 sound_check(); 
 printf("\n"); 
 
-printf("NOTICE: NWMovies: Please check for errors above\n"); 
-printf("NOTICE: NWMovies: nwmovies executable built. Please modify your nwn startup command to\n"); 
-printf("NOTICE: NWMovies: set LD_PRELOAD to 'nwmovies.so', before executing nwmain.\n"); 
+printf("NOTICE: NWMovies: Please check for errors above\n");
+printf("NOTICE: NWMovies: Built nwmovies.so and libdis.so libraries which need manually copied to games\n");
+printf("NOTICE: NWMovies: lib directory. Then modify your nwn startup command to set LD_PRELOAD to\n");
+printf("NOTICE: NWMovies: include \"./lib/nwmovies.so\" before executing nwmain.\n");
 
 exit(0); 
 

@@ -67,6 +67,8 @@
 #include <sys/mman.h>
 #include <limits.h>
 
+#include <stdarg.h>
+
 #include "nwmovies.h"
 
 #ifndef PAGESIZE
@@ -97,6 +99,25 @@ void NWMovies_printdata(char *ptr, int len);
 void NWMovies_memcpy(unsigned char *dest,  unsigned char *src, size_t n);
 extern void NWMovies_playmovie(void); 
 unsigned int *NWMovies_findcookie(char *file);
+void NWMovies_runcommand(char *title);
+
+void NWMovies_log(const int echo, const char *fmt, ...)
+{
+	static FILE *fp;
+	va_list arg_list;
+
+	if (!fp) 
+		fp = fopen(_NWMOVIES_LOGFILE, "a");
+
+	va_start(arg_list, fmt);
+	if (fp) {
+		vfprintf(fp, fmt, arg_list);
+		if (echo)
+			vfprintf(stderr, fmt, arg_list);
+	} else
+		vfprintf(stderr, fmt, arg_list);
+	va_end(arg_list);
+}
 
 // Initialize constructor attribute so we get called during executable startup.
 void NWMovies_Initialize(void) __attribute__((constructor));
@@ -128,7 +149,7 @@ void NWMovies_Initialize(void)
 
 	self_ptr = dlsym(self_handle, "_init"); 
 	if( self_ptr == NULL || dladdr( self_ptr, &info ) <= 0 ) { 
-		fprintf(stderr, "ERROR: NWMovies: dladdr(self: _init): %s\n", dlerror()); 
+		NWMovies_log(1, "ERROR: NWMovies: dladdr(self: _init): %s\n", dlerror()); 
 		abort(); 
 	} 
 	/* recycle library_name */
@@ -139,10 +160,14 @@ void NWMovies_Initialize(void)
 	} 
 	dlclose(self_handle);
 
-	/* Spit out a version number */
-	fprintf(stderr, "NOTICE: NWMovies(%s): Version: %s\n", info.dli_fname, _NWMOVIES_VERSION); 
+	/* Spit out a version number and reset log file */
+	fprintf(stderr, "NOTICE: NWMovies: Version: %s (Binary = %s)\n", _NWMOVIES_VERSION, info.dli_fname); 
+	if ((fp = fopen(_NWMOVIES_LOGFILE, "w"))) {
+		fprintf(fp, "NOTICE: NWMovies: Version: %s (Binary = %s)\n", _NWMOVIES_VERSION, info.dli_fname);
+		fclose(fp);
+	}
 
-	fprintf(stderr, "NOTICE: Looking up symbols in libSDL.....\n"); 
+	NWMovies_log(0, "NOTICE: NWMovies: Looking up symbols in libSDL.....\n"); 
 
 /* try to lookup libSDL functions via RTLD_NEXT, and if that doesn't work, 
  * open libSDL directly.
@@ -154,51 +179,51 @@ void NWMovies_Initialize(void)
 		/* via RTLD_NEXT failed, try loading libSDL directly. */
 		libSDL_handle = dlopen("libSDL-1.2.so.0", RTLD_NOW | RTLD_GLOBAL);
 		if ( libSDL_handle == NULL ) {
-			fprintf(stderr, "ERROR: NWMovies: dladdr(libSDL-1.2.so.0: _init): %s\n", dlerror()); 
+			NWMovies_log(1, "ERROR: NWMovies: dladdr(libSDL-1.2.so.0: _init): %s\n", dlerror()); 
 			abort(); 
 		}
 		sdl_wm_grabinput_ptr = dlsym(libSDL_handle, "SDL_WM_GrabInput"); 
 		if( sdl_wm_grabinput_ptr == NULL ) { 
-			fprintf(stderr, "ERROR: sdl_wm_grabinput_ptr == NULL: %s\n", dlerror()); 
+			NWMovies_log(1, "ERROR: sdl_wm_grabinput_ptr == NULL: %s\n", dlerror()); 
 			abort(); 
 		}
-		fprintf(stderr, "NOTICE: NWMovies: using libSDL via direct dlopen()\n"); 
+		NWMovies_log(0, "NOTICE: NWMovies: Using libSDL via direct dlopen()\n"); 
 	} else { 
-		fprintf(stderr, "NOTICE: NWMovies: Using libSDL via RTLD_NEXT.\n"); 
+		NWMovies_log(0, "NOTICE: NWMovies: Using libSDL via RTLD_NEXT.\n"); 
 	}
 
 	sdl_getvideosurface_ptr = dlsym(libSDL_handle, "SDL_GetVideoSurface"); 
-	if( sdl_getvideosurface_ptr == NULL ) { fprintf(stderr, "ERROR: sdl_getvideosurface_ptr == NULL: %s\n", dlerror()); abort(); }
+	if( sdl_getvideosurface_ptr == NULL ) { NWMovies_log(1, "ERROR: sdl_getvideosurface_ptr == NULL: %s\n", dlerror()); abort(); }
 
 	sdl_wm_togglefullscreen_ptr = dlsym(libSDL_handle, "SDL_WM_ToggleFullScreen"); 
-	if( sdl_wm_togglefullscreen_ptr == NULL ) { fprintf(stderr, "ERROR: sdl_wm_togglefullscreen_ptr == NULL: %s\n", dlerror()); abort(); }
+	if( sdl_wm_togglefullscreen_ptr == NULL ) { NWMovies_log(1, "ERROR: sdl_wm_togglefullscreen_ptr == NULL: %s\n", dlerror()); abort(); }
 
 	sdl_pollevent_ptr = dlsym(libSDL_handle, "SDL_PollEvent" );
-	if( sdl_pollevent_ptr == NULL ) { fprintf(stderr, "ERROR: sdl_pollevent_ptr == NULL: %s\n", dlerror()); abort(); }
+	if( sdl_pollevent_ptr == NULL ) { NWMovies_log(1, "ERROR: sdl_pollevent_ptr == NULL: %s\n", dlerror()); abort(); }
 
 	sdl_pollevent_ptr = dlsym(libSDL_handle, "SDL_PollEvent" );
-	if( sdl_pollevent_ptr == NULL ) { fprintf(stderr, "ERROR: sdl_pollevent_ptr == NULL: %s\n", dlerror()); abort(); }
+	if( sdl_pollevent_ptr == NULL ) { NWMovies_log(1, "ERROR: sdl_pollevent_ptr == NULL: %s\n", dlerror()); abort(); }
 
 	sdl_wm_iconifywindow_ptr = dlsym(libSDL_handle, "SDL_WM_IconifyWindow" );
-	if( sdl_wm_iconifywindow_ptr == NULL ) { fprintf(stderr, "ERROR: sdl_wm_iconifywindow_ptr == NULL: %s\n", dlerror()); abort(); }
+	if( sdl_wm_iconifywindow_ptr == NULL ) { NWMovies_log(1, "ERROR: sdl_wm_iconifywindow_ptr == NULL: %s\n", dlerror()); abort(); }
 
 	if( dladdr( sdl_wm_grabinput_ptr, &info ) <= 0 ) { 
-		fprintf(stderr, "ERROR: NWMovies: dladdr: %s\n", dlerror()); 
+		NWMovies_log(1, "ERROR: NWMovies: dladdr: %s\n", dlerror()); 
 		abort(); 
 	}
 
 	library_name = (char *)info.dli_fname; 	
 
-	fprintf(stderr, "NOTICE: SDL Library determined to be: %s\n", library_name); 
+	NWMovies_log(0, "NOTICE: NWMovies: SDL Library determined to be: %s\n", library_name); 
 
-	fprintf(stderr, "NOTICE: NWMovies: SDL_WM_GrabInput() address: %08x\n", (unsigned int)sdl_wm_grabinput_ptr); 
-	fprintf(stderr, "NOTICE: NWMovies: SDL_GetVideoSurface() address: %08x\n", (unsigned int)sdl_getvideosurface_ptr); 
-	fprintf(stderr, "NOTICE: NWMovies: SDL_WM_ToggleFullScreen() address: %08x\n", (unsigned int)sdl_wm_togglefullscreen_ptr); 
-	fprintf(stderr, "NOTICE: NWMovies: SDL_PollEvent() address: %08x\n", (unsigned int)sdl_pollevent_ptr); 
-	fprintf(stderr, "NOTICE: NWMovies: SDL_WM_IconifyWindow() address: %08x\n", (unsigned int)sdl_wm_iconifywindow_ptr); 
+	NWMovies_log(0, "NOTICE: NWMovies: SDL_WM_GrabInput() address: %08x\n", (unsigned int)sdl_wm_grabinput_ptr); 
+	NWMovies_log(0, "NOTICE: NWMovies: SDL_GetVideoSurface() address: %08x\n", (unsigned int)sdl_getvideosurface_ptr); 
+	NWMovies_log(0, "NOTICE: NWMovies: SDL_WM_ToggleFullScreen() address: %08x\n", (unsigned int)sdl_wm_togglefullscreen_ptr); 
+	NWMovies_log(0, "NOTICE: NWMovies: SDL_PollEvent() address: %08x\n", (unsigned int)sdl_pollevent_ptr); 
+	NWMovies_log(0, "NOTICE: NWMovies: SDL_WM_IconifyWindow() address: %08x\n", (unsigned int)sdl_wm_iconifywindow_ptr); 
 
 	if( stat("nwmain", &statbuf) != 0 ) { 
-		fprintf(stderr, "ERROR: NWMovies: Unable to stat nwmain: %d\n", errno); 
+		NWMovies_log(1, "ERROR: NWMovies: Unable to stat nwmain: %d\n", errno); 
 		exit(-1); 
 	}
 
@@ -206,10 +231,10 @@ void NWMovies_Initialize(void)
 
 	fp = fopen("nwmovies.ini", "r"); 
 	if( fp == NULL ) { 
-		fprintf(stderr, "WARNING: NWMovies: No INI file.  Creating.\n"); 
+		NWMovies_log(1, "WARNING: NWMovies: No INI file.  Creating.\n"); 
 		fp = fopen("nwmovies.ini", "w"); 
 		if( fp == NULL ) { 
-			fprintf(stderr, "ERROR: NWMovies: Unable to create INI file.  Aborting: %d\n", errno); 
+			NWMovies_log(1, "ERROR: NWMovies: Unable to create INI file.  Aborting: %d\n", errno); 
 			exit(-1); 
 		}
 		fprintf(fp, "size 0\n"); 
@@ -225,7 +250,7 @@ void NWMovies_Initialize(void)
 		fclose(fp); 
 		fp = fopen("nwmovies.ini", "r"); 
 		if( fp == NULL ) { 
-			fprintf(stderr, "ERROR: NWMovies: Unable to re-open nwmovies.ini. Aborting: %d\n", errno); 
+			NWMovies_log(1, "ERROR: NWMovies: Unable to re-open nwmovies.ini. Aborting: %d\n", errno); 
 			exit(-1); 
 		}
 	}
@@ -265,14 +290,14 @@ void NWMovies_Initialize(void)
 	
 	if( 	statbuf.st_size != file_size || statbuf.st_mtime != file_date ) {
 
-		fprintf(stderr, "WARNING: NWMovies: INI recalculation required: %d:%d %d:%d\n", 
+		NWMovies_log(1, "WARNING: NWMovies: INI recalculation required: %d:%d %d:%d\n", 
 			(unsigned int)statbuf.st_size, file_size, (unsigned int)statbuf.st_mtime, file_date); 
 
 		patch_address = NWMovies_findcookie( "nwmain" ); 
 		
 		fp = fopen("nwmovies.ini", "w"); 
 		if( fp == NULL ) { 
-			fprintf(stderr, "ERROR: NWMovies: Unable to create INI file.  Aborting: %d\n", errno); 
+			NWMovies_log(1, "ERROR: NWMovies: Unable to create INI file.  Aborting: %d\n", errno); 
 			exit(-1); 
 		}
 		fprintf(fp, "%s %d\n", "size", (unsigned int)statbuf.st_size); 
@@ -286,22 +311,22 @@ void NWMovies_Initialize(void)
 		fprintf(fp, "%s 0x%08x\n", "patch6", patch_address[6]); 
 		fprintf(fp, "%s 0\n", "NeedsToggle" ); 
 		fclose(fp); 
-		fprintf(stderr, "NOTICE: NWMovies: INI File written: Now exiting.  This is perfectly normal!\n"); 
-		fprintf(stderr, "NOTICE: Your next run of NWN should be complete, and include movies.\n"); 
+		NWMovies_log(1, "NOTICE: NWMovies: INI File written: Now exiting.  This is perfectly normal!\n"); 
+		NWMovies_log(1, "NOTICE: NWMovies: Your next run of NWN should be complete, and include movies.\n"); 
 		exit(0); 
 	}
 
-	fprintf(stderr, "NOTICE: NWMovies: Patch 0 Address: 0x%08x\n", patch0_addr); 
-	fprintf(stderr, "NOTICE: NWMovies: Patch 1 Address: 0x%08x\n", patch1_addr); 
-	fprintf(stderr, "NOTICE: NWMovies: Patch 2 Address: 0x%08x\n", patch2_addr); 
-	fprintf(stderr, "NOTICE: NWMovies: Patch 3 Address: 0x%08x\n", patch3_addr); 
-	fprintf(stderr, "NOTICE: NWMovies: Patch 4 Address: 0x%08x\n", patch4_addr); 
-	fprintf(stderr, "NOTICE: NWMovies: Patch 5 Address: 0x%08x\n", patch5_addr); 
-	fprintf(stderr, "NOTICE: NWMovies: Patch 6 Address: 0x%08x\n", patch6_addr); 
+	NWMovies_log(0, "NOTICE: NWMovies: Patch 0 Address: 0x%08x\n", patch0_addr); 
+	NWMovies_log(0, "NOTICE: NWMovies: Patch 1 Address: 0x%08x\n", patch1_addr); 
+	NWMovies_log(0, "NOTICE: NWMovies: Patch 2 Address: 0x%08x\n", patch2_addr); 
+	NWMovies_log(0, "NOTICE: NWMovies: Patch 3 Address: 0x%08x\n", patch3_addr); 
+	NWMovies_log(0, "NOTICE: NWMovies: Patch 4 Address: 0x%08x\n", patch4_addr); 
+	NWMovies_log(0, "NOTICE: NWMovies: Patch 5 Address: 0x%08x\n", patch5_addr); 
+	NWMovies_log(0, "NOTICE: NWMovies: Patch 6 Address: 0x%08x\n", patch6_addr); 
 
 	NWMovies_setup_memory(patch0_addr, patch1_addr, patch2_addr, patch3_addr, patch4_addr, patch5_addr, patch6_addr); 
 
-	fprintf(stderr, "NOTICE: NWMovies: Initialized.\n");
+	NWMovies_log(0, "NOTICE: NWMovies: Initialized.\n");
 
 	return;
 }
@@ -310,22 +335,22 @@ SDL_GrabMode SDL_WM_GrabInput(SDL_GrabMode mode) {
 
 	/* Get/Save the current grab mode. */
 	
-	fprintf(stderr, "NOTICE: SDL_WM_GrabInput("); 
+	NWMovies_log(0, "NOTICE: NWMovies: SDL_WM_GrabInput("); 
 	switch( mode) { 
 		case SDL_GRAB_QUERY:
-			fprintf(stderr, "QUERY) called..\n"); 
+			NWMovies_log(0, "QUERY) called..\n"); 
 			_NWMovies_Current_Grab_Mode = sdl_wm_grabinput_ptr( mode ); 
 			break; 
 		case SDL_GRAB_OFF:
-			fprintf(stderr, "OFF) called..\n"); 
+			NWMovies_log(0, "OFF) called..\n"); 
 			_NWMovies_Current_Grab_Mode = SDL_GRAB_OFF;
 			break; 
 		case SDL_GRAB_ON:
-			fprintf(stderr, "ON) called..\n"); 
+			NWMovies_log(0, "ON) called..\n"); 
 			_NWMovies_Current_Grab_Mode = SDL_GRAB_ON;
 			break; 
 		default: 
-			fprintf(stderr, "UNKNOWN) called..\n"); 
+			NWMovies_log(0, "UNKNOWN) called..\n"); 
 			break; 
 		
 	}
@@ -426,23 +451,21 @@ void NWMovies_setup_memory(unsigned int patch0, unsigned int patch1, unsigned in
 	if( patch3_buf[2] == 144 ) { patch3_flag = 1; } 
 
 
-	fprintf(stderr, "NOTICE: NWMovies: PrePatch0: "); 
+	NWMovies_log(0, "NOTICE: NWMovies: PrePatch0: ");
 	NWMovies_printdata((void *)patch0, sizeof(patch0_code)-1); 
-	fprintf(stderr, "\n"); 
-	fprintf(stderr, "NOTICE: NWMovies: PrePatch1: "); 
+	NWMovies_log(0, "\nNOTICE: NWMovies: PrePatch1: "); 
 	NWMovies_printdata((void *)patch1, sizeof(patch1_code)-1); 
-	fprintf(stderr, "\n"); 
-	fprintf(stderr, "NOTICE: NWMovies: PrePatch2: "); 
+	NWMovies_log(0, "\nNOTICE: NWMovies: PrePatch2: "); 
 	NWMovies_printdata((void *)patch2, sizeof(patch2_code)-1); 
-	fprintf(stderr, "\n"); 
+	NWMovies_log(0, "\n"); 
 	if( patch3_flag ) { 
-		fprintf(stderr, "NOTICE: NWMovies: PrePatch3: 169+: "); 
+		NWMovies_log(0, "NOTICE: NWMovies: PrePatch3: 169+: "); 
 		NWMovies_printdata((void *)patch3, sizeof(patch3_code2)-1); 
 	} else { 
-		fprintf(stderr, "NOTICE: NWMovies: PrePatch3: 168-: "); 
+		NWMovies_log(0, "NOTICE: NWMovies: PrePatch3: 168-: "); 
 		NWMovies_printdata((void *)patch3, sizeof(patch3_code1)-1); 
 	}
-	fprintf(stderr, "\n"); 
+	NWMovies_log(0, "\n"); 
 
 	NWMovies_memcpy((void *)patch0, patch0_code, sizeof(patch0_code)-1); 
 	NWMovies_memcpy((void *)patch1, patch1_code, sizeof(patch1_code)-1); 
@@ -453,27 +476,25 @@ void NWMovies_setup_memory(unsigned int patch0, unsigned int patch1, unsigned in
 		NWMovies_memcpy((void *)patch3, patch3_code1, sizeof(patch3_code1)-1); 
 	}
 
-	fprintf(stderr, "NOTICE: NWMovies: PostPatch0: "); 
+	NWMovies_log(0, "NOTICE: NWMovies: PostPatch0: "); 
 	NWMovies_printdata((void *)patch0, sizeof(patch0_code)-1); 
-	fprintf(stderr, "\n"); 
-	fprintf(stderr, "NOTICE: NWMovies: PostPatch1: "); 
+	NWMovies_log(0, "\nNOTICE: NWMovies: PostPatch1: "); 
 	NWMovies_printdata((void *)patch1, sizeof(patch1_code)-1); 
-	fprintf(stderr, "\n"); 
-	fprintf(stderr, "NOTICE: NWMovies: PostPatch2: "); 
+	NWMovies_log(0, "\nNOTICE: NWMovies: PostPatch2: "); 
 	NWMovies_printdata((void *)patch2, sizeof(patch2_code)-1); 
-	fprintf(stderr, "\n"); 
+	NWMovies_log(0, "\n"); 
 	if( patch3_flag ) { 
-		fprintf(stderr, "NOTICE: NWMovies: PostPatch3: 169+: "); 
+		NWMovies_log(0, "NOTICE: NWMovies: PostPatch3: 169+: "); 
 		NWMovies_printdata((void *)patch3, sizeof(patch3_code2)-1); 
 	} else { 
-		fprintf(stderr, "NOTICE: NWMovies: PostPatch3: 168-: "); 
+		NWMovies_log(0, "NOTICE: NWMovies: PostPatch3: 168-: "); 
 		NWMovies_printdata((void *)patch3, sizeof(patch3_code1)-1); 
 	}
-	fprintf(stderr, "\n"); 
+	NWMovies_log(0, "\n"); 
 
-	fprintf(stderr, "NOTICE: NWMovies: PrePatch4: "); 
+	NWMovies_log(0, "NOTICE: NWMovies: PrePatch4: "); 
 	NWMovies_printdata((void *)patch4, 5); 
-	fprintf(stderr, "\n"); 
+	NWMovies_log(0, "\n"); 
 
 	address_offset = (unsigned long) &NWMovies_playmovie;
 	address_offset = address_offset - (unsigned long) patch4 - 5; /* How many bytes should the jump be */
@@ -482,14 +503,14 @@ void NWMovies_setup_memory(unsigned int patch0, unsigned int patch1, unsigned in
 	NWMovies_memcpy((void *)patch4, instruction, 5); 			/* Put the jump in */
 	_NWM_movie_retaddr = (unsigned long)patch4 + 0x5; 			/* setup return address */
 
-	fprintf(stderr, "NOTICE: NWMovies: PostPatch4: "); 
+	NWMovies_log(0, "NOTICE: NWMovies: PostPatch4: "); 
 	NWMovies_printdata((void *)patch4, 5); 
-	fprintf(stderr, "\n"); 
+	NWMovies_log(0, "\n"); 
 
 	if( patch5 != 0 && patch5 != 1 && patch6 != 0 && patch6 != 1 ) { 
-		fprintf(stderr, "NOTICE: NWMovies: MoviesPrePatch: "); 
+		NWMovies_log(0, "NOTICE: NWMovies: MoviesPrePatch: "); 
 		NWMovies_printdata((void *)patch5, patch6 - patch5); 
-		fprintf(stderr, "\n"); 
+		NWMovies_log(0, "\n"); 
 
 		for( i = patch5; i < patch6; i=i+4 ) { 
 			memcpy( instruction, (void *)i, 4); 
@@ -500,11 +521,11 @@ void NWMovies_setup_memory(unsigned int patch0, unsigned int patch1, unsigned in
 			} 
 			NWMovies_memcpy( (void *) i, instruction, 4 );
 		}
-		fprintf(stderr, "NOTICE: NWMovies: MoviesPostPatch: "); 
+		NWMovies_log(0, "NOTICE: NWMovies: MoviesPostPatch: "); 
 		NWMovies_printdata((void *)patch5, patch6 - patch5); 
-		fprintf(stderr, "\n"); 
+		NWMovies_log(0, "\n"); 
 	} else { 
-		fprintf(stderr, "NOTICE: NWMovies: Movie Button already enabled. Skipping movie patch.\n"); 
+		NWMovies_log(0, "NOTICE: NWMovies: Movie Button already enabled. Skipping movie patch.\n"); 
 	}
 }
 
@@ -513,7 +534,7 @@ void NWMovies_printdata(char *ptr, int len)
 	int i; 
 
 	for(i=0; i<len; i++) { 
-		fprintf(stderr, "%02x ", (unsigned char) ptr[i]); 
+		NWMovies_log(0, "%02x ", (unsigned char) ptr[i]); 
 	}
 	return; 
 }
@@ -527,45 +548,32 @@ void NWMovies_memcpy(unsigned char *dest, unsigned char *src, size_t n)
 	/* Do two pages, just to make certain we get a big enough chunk */
 	p = (unsigned char *)(((int) p + PAGESIZE-1) & ~(PAGESIZE-1));
 	if( mprotect(p-PAGESIZE, 2 * PAGESIZE, PROT_READ|PROT_WRITE|PROT_EXEC) != 0 ) { 
-		fprintf(stderr, "ERROR: NWMovies: Could not de-mprotect(%p)\n", p); 
+		NWMovies_log(1, "ERROR: NWMovies: Could not de-mprotect(%p)\n", p); 
 		exit(-1); 
 	}
 
 	memcpy(dest, src, n);
 	/* restore memory protection */
 	if( mprotect(p-PAGESIZE, 2 * PAGESIZE, PROT_READ|PROT_EXEC) != 0 ) { 
-		fprintf(stderr, "ERROR: NWMovies: Could not re-mprotect(%p)\n", p); 
+		NWMovies_log(1, "ERROR: NWMovies: Could not re-mprotect(%p)\n", p); 
 		exit(-1); 
 	}
 }
 
 unsigned long	_NWMovies_ESI;
-char		_NWM_playcmd[PATH_MAX];
 
 void NWMovies_playmovie2(void)
 {	
 	char 	*title; 
-	int	fd; 
 
 	SDL_Surface	*current_surface = NULL; 
 	Uint32		current_flags; 
 
 	memcpy(&title, (void *)_NWMovies_ESI, 4);
 	if (!title) {
-		snprintf(_NWM_playcmd, PATH_MAX, "ERROR moviename was NULL");
-	} else {
-		snprintf(_NWM_playcmd, PATH_MAX, "%s %s >> nwmovies.log 2>&1", "./nwmovies.pl", title);
-	}
-
-	fd = open("nwmovies.log", O_CREAT | O_APPEND | O_WRONLY, 0755 ) ;
-	if( fd >= 0 ) {
-		write(fd, _NWM_playcmd, strlen(_NWM_playcmd));
-		write(fd, "\n", 1);
-		close(fd);
-	}
-
-	if (!title) 
+		NWMovies_log(1, "ERROR: NWMovies: Movie title was NULL");
 		return;
+	}
 
 /* try to release the Xserver grab, then play, then grab again */
 
@@ -593,7 +601,7 @@ void NWMovies_playmovie2(void)
 
 	current_surface = sdl_getvideosurface_ptr(); 
 	if(current_surface == NULL) { 
-		fprintf(stderr, "ERROR: PlayMovie2: Unable to get current SDL Surface for Internal Grab release. Giving up!\n"); 
+		NWMovies_log(1, "ERROR: NWMovies: PlayMovie2: Unable to get current SDL Surface for Internal Grab release. Giving up!\n"); 
 		abort(); 
 	}
 
@@ -611,10 +619,10 @@ void NWMovies_playmovie2(void)
 		}
 	}
 
-	fprintf(stderr, "NOTICE: NWMovies: Attempting to play: %s\n", title); 
+	NWMovies_log(0, "NOTICE: NWMovies: Attempting to play movie \"%s\"\n", title); 
 
 	NWMovies_Ungrab();
-	system(_NWM_playcmd);
+	NWMovies_runcommand(title);
 
 // And finally restore the fullscreen mode, and any grab settings. 
 	if( getenv( "NWMOVIES_GRAB_HACK" ) != NULL ) { 
