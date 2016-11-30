@@ -18,17 +18,12 @@ If I've forgotten anyone my apologies, its been a long time.
 ---------------------------------------------------------------------------
 Requirements:
 
-NWMovies now includes pre-built binary modules. They were built on a Ubuntu
-8.04 system.  If they work for you (and you trust they're what I claim them
-to be) there is no longer any need to build NWMovies from source.
+NWMovies now includes pre-built binary modules. They were built on a Gentoo
+system.  If they work for you (and you trust they're what I claim them to
+be) there is no longer any need to build NWMovies from source.
 
-You will still however need at a minimum, Perl and the BinkPlayer movie 
-player.  You will also need SDL_mixer, as that is a requirement of 
-BinkPlayer
-
-Perl is installed by default of almost all Linux distributions by default.
-
-BinkPlayer is available from: http://www.radgametools.com/bnkdown.htm
+You will still however need at a minimum, Perl and the FFMpeg ffplay media 
+player.
 
 ---------------------------------------------------------------------------
 
@@ -49,34 +44,6 @@ The "nwmovies_install.pl" script can be used to build the source as well.
 "./nwmovies_install.pl build" will NWMovies from source code.
 
 ---------------------------------------------------------------------------
-Optional things: 
-
-libSDL_gfx: 	http://www.ferzkopp.net/~aschiffler/Software/SDL_gfx-2.0/
-
-This is only necessary if you wish to attempt to scale Bink movies
-to take up the entire screen.   (Not recommended for performance 
-reasons)
-
-Either install the 32bit libSDL_gfx package for your distribution, or build
-a 32bit version of the library from the source code, and place the 
-libSDL_gfx.so in the NWMovies directory.
-
-MPlayer, or plaympeg: 
-
-If you choose not to use BinkPlayer, there is old code in nwmovies.pl to 
-play movies that have been converted to mpeg, via MPlayer, or plaympeg.  
-However, BinkPlayer is the recommended movie player, and the old code in 
-nwmovies.pl is left over from old versions of NWMovies, and has not been 
-tested extensively. 
-
-If you are not using BinkPlayer you will need to convert the .bik movies
-into something MPlayer or plaympeg will read.  gjj's nwnbink2ogm 
-( http://delirare.com/stuff/nwnbink2ogm.php ) is known to work for MPlayer, 
-and should be a reasonable starting place if you insist on trying plaympeg.
-
-Again, the recommended movie player is BinkPlayer, and since there are no
-known issues using it, I would strongly recommend attempting to use it first. 
- ---------------------------------------------------------------------------
 
 Cleanup pre-instructions:
 
@@ -115,16 +82,12 @@ some sound card configuration.
 See "nwmovies.README.soundcards.txt" for further documentation, and
 suggestions.
 
-*) Download and install BinkPlayer in the NWMovies directory.
+*) Download and install FFMpeg (or libav).
 
-	cd (NWN install location)/nwmovies
-	unzip BinkLinuxPlayer.zip
-	chmod 755 BinkPlayer
-
-If you are not using BinkPlayer for your movies, you will need to convert
-them at this point.
-
-BinkPlayer may also be placed somewhere in your PATH.
+This should be available for all Linux distributions as a native package.
+Note for FFMpeg versions earlier than 1.1, bug 1935 caused Bink movies not
+to automatically exit at their end so just press any key or mouse button
+to exit the movie player as normal.
 
 *) Install your movies.    
 
@@ -227,66 +190,23 @@ To enable this hack add the following line to your 'nwn' startup script.
 	export NWMOVIES_GRAB_HACK=1
 
 This is not enabled by default as it manipulates internal libSDL state,
-and maybe broken at any time by the libSDL developers. 
+and maybe broken at any time by the libSDL developers. However, since SDL
+2.0 has been released and SDL 1.2 is now in maintenance mode, this is now
+unlikely and it is safe to use this hack.
 
 ---------------------------------------------------------------------------
-Movie fullscreen scaling: 
+Changing media player:
 
-To enable movie full screen scaling you must install libSDL_gfx either via
-your distributions package management system (if available), or by building 
-it from source.   
+To change the media player from the default settings, add the following
+example line to your 'nwn' startup script and adjust to desired
+preferences.
 
-If you build libSDL_gfx from source, the resulting shared library file 
-libSDL_gfx.so must be placed in the (NWN install location)/nwmovies.  If
-you install it via your distributions package management, you should not
-need to do anything further beyond the below documentation.  
+	export NWMOVIES_PLAY_COMMAND="command -options"
 
-Once libSDL_gfx is installed, you need to modify the nwmovies.pl script,
-and remove the '#' comment character at the beginning of the following
-line, so it reads as such: (Approximately line 57)
-
-$ENV{"BINK_SCALE"} = 1;                # Scale movie to full screen.
-
-This enables the fullscreen scaling. 
-
-Optionally, you may uncomment the following line as well:  (Line 58)
-
-$ENV{"BINK_SMOOTH"} = 1;               # Smooth the scaled movie for even
-
-This enables software anti-aliasing of the scaled movie.  The movie looks
-significantly better, however, it also slows down movie playback
-signficantly. 
-
-Fullscreen scaling, and smoothing both are resource intensive, and may not
-be possible based upon your systems hardware. 
+The movie filename is appended to the command.
 
 ---------------------------------------------------------------------------
-Movie performance setting: 
-
-By default BinkPlayer is extremely resource intensive for some strange, and
-apparently unnecessary reason.  As such there is an performance impact
-lessening change that is enabled by default. 
-
-If you are getting poor performance out of your movie playback you may wish
-to disable the change.
-
-Remove the '#' comment character from the beginnging of the following line
-from the 'nwmovies.pl' so it looks like so:  (Approximately line 61)
-
-$ENV{"BINK_NOPERF"} = 1;               # Disable some performance
-
-This will allow BinkPlayer to use full CPU for performance.   Ordinarily
-you should NOT need to turn this on except on lower end hardware. Or while
-debugging NWMovies.
-
----------------------------------------------------------------------------
-Additional variables: 
-
-The following addtional variables are recognized by NWMovies, and are
-controlled internally.  You should not need to modify them manually, and
-are here only for documentation puposes.
-
-BINK_WIDTH, BINK_HEIGHT, BINK_FULLSCREEN
+Additional variables:
 
 The 'nwmovies_install.pl' script recognizes the CC, CFLAGS, and LDFLAGS
 when building NWMovies from source.
@@ -308,7 +228,7 @@ address with questions, comments, issues, etc.
 Flames will be redirected to /dev/null.   As will testy bug reports.  
 Friendly bug reports will be examined as time permits. 
 
-I won't garentee that I can solve any, and all problems but I will at 
+I won't guarantee that I can solve any, and all problems but I will at
 least attempt to as my time permits. 
 
 I will at the very minimum need the output NWMovies displays when starting
@@ -321,11 +241,7 @@ The main menu music does not work after starting NWN w/ NWMovies.
 Entering the game, and backing out to the main menu, the music works.
 Known issue, no known cause, nor resolution. 
 
-MPlayer at one point required the 'x11' output driver, instead of the 'Xv'
-output driver.  Attempting to use the 'Xv' driver crashed the X server.
 
-smpeg worked at one point as a movie player, if you can edit nwmovies.pl 
-appropriately, and convert your movies to MPEG1. 
 
 
 Standard Legal Stuff: 
