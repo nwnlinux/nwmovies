@@ -80,21 +80,20 @@ static int NWMovies_skipmovie(const char *movietitle)
 	FILE *skipfile;
 	char skiplist[128];
 	char *ptr;
+	static int status = 0;
 
 	if ((skipfile = fopen("nwmovies.skip", "r"))) {
-		while (fgets(skiplist, sizeof(skiplist), skipfile)) {
+		while (status == 0 && fgets(skiplist, sizeof(skiplist), skipfile)) {
 			if ((ptr = strchr(skiplist, '\n')))
 				*ptr = '\0';
 			if (!strcasecmp(movietitle, skiplist)) {
-				fclose(skipfile);
 				NWMovies_log(0, "NOTICE: NWMovies: Skipped movie \"%s\" as in nwmovies.skip\n", movietitle);
-				return 1;
+				status = 1;
 			}
 		}
+		fclose(skipfile);
 	}
-	fclose(skipfile);
-
-	return 0;
+	return status;
 }
 
 static char *NWMovies_findmoviefile(const char *movietitle)
