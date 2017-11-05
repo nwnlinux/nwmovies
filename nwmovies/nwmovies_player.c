@@ -80,7 +80,7 @@ static int NWMovies_skipmovie(const char *movietitle)
 	FILE *skipfile;
 	char skiplist[128];
 	char *ptr;
-	static int status = 0;
+	int status = 0;
 
 	if ((skipfile = fopen("nwmovies.skip", "r"))) {
 		while (status == 0 && fgets(skiplist, sizeof(skiplist), skipfile)) {
