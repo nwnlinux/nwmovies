@@ -344,18 +344,19 @@ void apply_seg(unsigned int prefix, unsigned int *dest_flg,
 			unsigned long *dest, struct addr_exp *expr)
 {
 	unsigned int seg = prefix & 0xF0000000;
-	unsigned int type, reg = 0;
+//	unsigned int type, reg = 0;
+	unsigned int type;
 
 	if (!seg) return;
 
 	/* apply defaults for each register */
 	type = OP_DATASEG;
 
-	if ((*dest_flg & OP_TYPE_MASK) == OP_EXPR) 
-		reg = expr->base;
-	else if ((*dest_flg & OP_TYPE_MASK) == OP_REG)
-		reg = *dest;
-	/* reg is either 0 {eax) or from operand */
+//	if ((*dest_flg & OP_TYPE_MASK) == OP_EXPR) 
+//		reg = expr->base;
+//	else if ((*dest_flg & OP_TYPE_MASK) == OP_REG)
+//		reg = *dest;
+//	/* reg is either 0 {eax) or from operand */
 
 
 	/* apply overrides from prefix */
