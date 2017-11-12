@@ -18,7 +18,7 @@ If I've forgotten anyone my apologies, its been a long time.
 ---------------------------------------------------------------------------
 Requirements:
 
-NWMovies now includes pre-built binary modules. They were built on a Gentoo
+NWMovies now includes pre-built binary modules. They were built on a CentOS7
 system.  If they work for you (and you trust they're what I claim them to
 be) there is no longer any need to build NWMovies from source.
 
