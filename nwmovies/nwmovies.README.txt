@@ -11,7 +11,7 @@ My thanks to Bioware for supporting NWN on the Linux platform.
 
 The Linux NWN community members for their support, specifically Skildron, 
 Eyrdan, Benjamin 'Asaru' Dirks, JonSvenJonsson, Eljar, Hesham Hassan, 
-Azlinon, Urban Widmark, gjj, and Daniel Andrade.
+Azlinon, Urban Widmark, gjj, Daniel Andrade, alanswanson, scfarley.
 
 If I've forgotten anyone my apologies, its been a long time.
 
@@ -204,6 +204,13 @@ preferences.
 	export NWMOVIES_PLAY_COMMAND="command -options"
 
 The movie filename is appended to the command.
+
+2017/11/12 - Per Sean Farley, the following works under FreeBSD, as he had 
+issues with ffplay.
+
+export NWMOVIES_PLAY_COMMAND="mpv --fullscreen --keep-open=no" \
+        "--no-config --no-input-cursor --no-osc --no-terminal" \
+        "--osd-level=0"
 
 ---------------------------------------------------------------------------
 Additional variables:
