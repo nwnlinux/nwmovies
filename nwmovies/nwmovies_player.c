@@ -114,7 +114,7 @@ static char *NWMovies_findmoviefile(const char *movietitle)
 	}
 
 	while ((entry = readdir(dir)) != NULL) {
-		if (entry->d_type == DT_REG) {
+		if (entry->d_type == DT_REG || entry->d_type == DT_LNK) {
 			if (!strcasecmp(tmp, entry->d_name)) {
 				filename = strdup(entry->d_name);
 				break;
