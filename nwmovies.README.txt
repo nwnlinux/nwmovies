@@ -1,1 +1,272 @@
-nwmovies/nwmovies.README.txt
+NWMovies is inteded to be a solution to a minor "missing movie" deficiency 
+in the Linx NWN client.  
+
+Long story short:  It puts the movies back into the Linux client just like
+they are on the Windows clients.
+
+---------------------------------------------------------------------------
+Acknowledgments: 
+
+My thanks to Bioware for supporting NWN on the Linux platform. 
+
+The Linux NWN community members for their support, specifically Skildron, 
+Eyrdan, Benjamin 'Asaru' Dirks, JonSvenJonsson, Eljar, Hesham Hassan, 
+Azlinon, Urban Widmark, gjj, Daniel Andrade, alanswanson, scfarley.
+
+If I've forgotten anyone my apologies, its been a long time.
+
+---------------------------------------------------------------------------
+Requirements:
+
+NWMovies now includes pre-built binary modules. They were built on a CentOS7
+system.  If they work for you (and you trust they're what I claim them to
+be) there is no longer any need to build NWMovies from source.
+
+You will still however need at a minimum, Perl and the FFMpeg ffplay media 
+player.
+
+---------------------------------------------------------------------------
+
+Building from Source requirements: 
+
+gcc, Perl, libelf, and full development headers. 
+
+If you are building on x86_64, you will need to install the appropriate
+32bit versions of your development libraries. NWN is a 32bit application,
+and the 64bit versions of development libraries installed by default are 
+of no use. 
+
+Also note building 32bit binaries on a 64bit x86_64 OS is often considered 
+"hard" and not a trivial exercise.
+
+The "nwmovies_install.pl" script can be used to build the source as well.
+
+"./nwmovies_install.pl build" will NWMovies from source code.
+
+---------------------------------------------------------------------------
+
+Cleanup pre-instructions:
+
+#) Remove any old versions of NWMovies, with a simple 
+
+	cd (NWN install location)
+ 	rm -rf nwmovies* 
+
+#) If you are using nwuser, and installed NWMovies in your home directory, 
+be certain to remove any NWMovies related files in your home directory as well. 
+
+	rm -rf $HOME/.nwn/nwmovies*
+ 
+---------------------------------------------------------------------------
+
+Installation instructions: 
+
+*) Unpack the tarball in your NWN directory
+
+	cd (NWN install location)
+	gzip -dc nwmovies-(version).tar.gz | tar xvf - 
+
+*) Execute "nwmovies_install.pl" to check a few known sound card
+things. 
+
+ 	./nwmovies_install.pl 
+
+This will check a few odds and ends and hopefully give you some clues about
+how your sound subsystem is configured.  *Note: This does not check
+the new PulseAudio sound system at this point. 
+
+If you wish to build remove from source, execute "./nwmovies_install.pl build"
+and it will attempt to build NWMovies from source as well as check 
+some sound card configuration.
+
+See "nwmovies.README.soundcards.txt" for further documentation, and
+suggestions.
+
+*) Download and install FFMpeg (or libav).
+
+This should be available for all Linux distributions as a native package.
+Note for FFMpeg versions earlier than 1.1, bug 1935 caused Bink movies not
+to automatically exit at their end so just press any key or mouse button
+to exit the movie player as normal.
+
+*) Install your movies.    
+
+The movies should go in the "movies" directory under the main NWN
+directory.  They should be on your NWN CD's somewhere.  The exact location
+varies depending on the particular version of NWN you bought.  They may
+also be in one of the "Language_data" ZIP files in the case of standalone
+SOU/HOTU.
+
+I believe this is the default collection of movies:
+
+uholld1@crusader:~/nwn/movies$ ls *.bik
+AtariLogo.bik    credits.bik         prelude_chap1.bik    XP1_Intro.bik
+BiowareLogo.bik  ending.bik          WOTCLogo.bik         XP2_Intro.bik
+Chap1_Chap2.bik  fge_logo_black.bik  XP1_Chap1_Chap2.bik
+Chap2_Chap3.bik  NWNintro.bik        XP1_Chap2_Chap3.bik
+Chap3_Chap4.bik  prelude.bik         XP1_Closing.bik
+
+
+*) Modify the 'nwn' startup script to include the following line: 
+
+	export LD_PRELOAD=./nwmovies.so
+
+Before it executes "./nwmain"
+
+Also note, the libSDL included with NWN is horribly old, and tends to cause
+problems on newer systems (from xcb_lock issues to no sound) so you may
+wish to edit the LD_LIBRARY_PATH setting in 'nwn' as well to remove the 
+"./lib:" entry.
+
+*) Run NWN.
+ 
+	./nwn
+
+If you have edited the nwn script appropriately, the first time you run
+NWN, NWMovies will build the INI file, and then exit.   This is normal.
+The second run of NWN will execute normally. 
+
+*) Run NWN a second time. 
+
+This time NWN should start up, and play the movies properly.  You should
+be able to hit "escape" to abort a playing movie.  
+
+The screen does flicker at the beginning and end of a movie. There are long
+term supportability issues involved, but there is an environment variables 
+you can set that may help remove it.
+
+The 'Movies' button at the NWN main menu should work.
+
+The only known bug is the music at the main menu does not work when you
+first enter NWN.  Entering the game, and then quitting back to the main
+menu causes the music to start working.  There is no known reason for
+this.   The button click sound howver works normally. 
+
+If you do not have any sound at all in either NWN, or in the movies, you
+possibly have a single PCM channel sound card and may need to look into
+your audio software mixing options see the 'nwmovies.README.soundcard.txt'
+for further documentation. 
+
+---------------------------------------------------------------------------
+Further Documentation: 
+
+---------------------------------------------------------------------------
+Skipping specific movies: 
+
+If you wish to skip specific movies, while leaving others enabled to be 
+played.  You've two options. 
+
+You can delete the movie.  If a movie is missing NWMovies obviously can't
+play it. 
+
+If you can't delete (or don't want to delete) the movie (as might occur
+when using NWUser), you can place the title of the movie(s) in a 
+'nwmovies.skip' file. One title per line.   The titles are not case 
+sensitive, "AtariLogo" works just as well as "atarilogo".
+
+The file must be placed in either in the top level nwn directory, or in 
+$HOME/.nwn/nwmovies.skip 
+
+---------------------------------------------------------------------------
+Screen Flickering at movie beginning/end: 
+
+Per code inside of libSDL, libSDL enforces fullscreen applications to
+maintain a keyboard, and mouse grab, so that other applications cannot
+interfere with the fullscreen application.  
+
+The only officially supported way to disable that grab, is to toggle the 
+fullscreen state of the window.  NWMovies toggles the NWN fullscreen state
+off at movie start, and toggles the fullscreen state back on at movie end.  
+That toggling is the source of the screen flickers. 
+
+However, you may enable a hack in NWMovies that manipulates internal libSDL 
+state, to make libSDL believe NWN is not a fullscreen application. If
+libSDL believes NWN is not a fullscreen application, the normal grab
+release mechanisms work, and NWMovies does not need to toggle the fulscreen
+state of the the NWN window. 
+
+To enable this hack add the following line to your 'nwn' startup script. 
+
+	export NWMOVIES_GRAB_HACK=1
+
+This is not enabled by default as it manipulates internal libSDL state,
+and maybe broken at any time by the libSDL developers. However, since SDL
+2.0 has been released and SDL 1.2 is now in maintenance mode, this is now
+unlikely and it is safe to use this hack.
+
+---------------------------------------------------------------------------
+Changing media player:
+
+To change the media player from the default settings, add the following
+example line to your 'nwn' startup script and adjust to desired
+preferences.
+
+	export NWMOVIES_PLAY_COMMAND="command -options"
+
+The movie filename is appended to the command.
+
+2017/11/12 - Per Sean Farley, the following works under FreeBSD, as he had 
+issues with ffplay.
+
+export NWMOVIES_PLAY_COMMAND="mpv --fullscreen --keep-open=no" \
+        "--no-config --no-input-cursor --no-osc --no-terminal" \
+        "--osd-level=0"
+
+---------------------------------------------------------------------------
+Additional variables:
+
+The 'nwmovies_install.pl' script recognizes the CC, CFLAGS, and LDFLAGS
+when building NWMovies from source.
+
+---------------------------------------------------------------------------
+Log files: 
+
+There is a bit of a log file in 'nwmovies.log'. If you do run into issues 
+hopefully between the output NWMovies displays at startup, and the contents 
+of the log file, any issues will be easily identifiable, and quickly
+resolveable. 
+
+---------------------------------------------------------------------------
+Other issues: 
+
+Please feel free to contact me via the Bioware forums, or at my gmail.com 
+address with questions, comments, issues, etc.  
+
+Flames will be redirected to /dev/null.   As will testy bug reports.  
+Friendly bug reports will be examined as time permits. 
+
+I won't guarantee that I can solve any, and all problems but I will at
+least attempt to as my time permits. 
+
+I will at the very minimum need the output NWMovies displays when starting
+NWN, and possibly the output of the 'nwmovies.log' file. 
+
+---------------------------------------------------------------------------
+Known Issues/Bugs/Comments: 
+
+The main menu music does not work after starting NWN w/ NWMovies.
+Entering the game, and backing out to the main menu, the music works.
+Known issue, no known cause, nor resolution. 
+
+
+
+
+Standard Legal Stuff: 
+---------------------------------------------------------------------------
+
+I do not guarentee this to work on any computer, except my own.   If it 
+should some how allow all the magic smoke to escape your computer, well
+tough.  You were warned.   Avoid swimming for at least three hours after 
+using this product. 
+
+What little bit of this that is copyrightable is copywritten by David Holland
+david.w.holland@gmail.com.   You may do what you wish with this code so long as
+some credit is given to me, and the copyright is maintained.
+
+If someone would like to send me better installation instructions, and
+or code updates, I'll gladly update the package and attribute the 
+improvements to them. 
+
+David Holland
+05/03/06
+david.w.holland@gmail.com
