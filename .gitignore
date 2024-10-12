@@ -3,3 +3,4 @@ nwmovies_cookie.o
 nwmovies_link.o
 nwmovies_lookup.o
 nwmovies_player.o
+nwmovies.log
