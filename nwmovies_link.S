@@ -5,6 +5,7 @@
 
 /* Things that need to be visible external to this code.  */
 	.globl	NWMovies_playmovie
+	.globl  _NWMovies_ESI
 
 	.globl  NWMovies_link_store_ESI
 	.globl  NWMovies_link_playmovie2
