@@ -18,12 +18,17 @@ If I've forgotten anyone my apologies, its been a long time.
 ---------------------------------------------------------------------------
 Requirements:
 
-NWMovies now includes pre-built binary modules. They were built on a CentOS7
+NWMovies now includes pre-built binary modules. They were built on a Fedora40
 system.  If they work for you (and you trust they're what I claim them to
 be) there is no longer any need to build NWMovies from source.
 
 You will still however need at a minimum, Perl and the FFMpeg ffplay media 
 player.
+
+Additionally, you will still need to run the ./nwmovies/nwmovies_install.pl 
+command to install the requisite symlink
+
+(or type 'ln -s nwmovies/nwmovies.so .' -- your choice :-) )
 
 ---------------------------------------------------------------------------
 
@@ -39,9 +44,10 @@ of no use.
 Also note building 32bit binaries on a 64bit x86_64 OS is often considered 
 "hard" and not a trivial exercise.
 
-The "nwmovies_install.pl" script can be used to build the source as well.
+The "nwmovies_install.pl" script can be used to build the source as well, 
+by utilizing the "build" option.
 
-"./nwmovies_install.pl build" will NWMovies from source code.
+eg: "./nwmovies_install.pl build" 
 
 ---------------------------------------------------------------------------
 
@@ -63,31 +69,14 @@ Installation instructions:
 
 *) Unpack the tarball in your NWN directory
 
-	cd (NWN install location)
-	gzip -dc nwmovies-(version).tar.gz | tar xvf - 
+   cd (NWN install location)
+   git clone https://github.com/nwnlinux/nwmovies
 
-*) Execute "nwmovies_install.pl" to check a few known sound card
-things. 
+*) Install nwmovies. (utilizing pre-build binaries) 
+   ./nwmovies/nwmovies_install.pl 
 
- 	./nwmovies_install.pl 
-
-This will check a few odds and ends and hopefully give you some clues about
-how your sound subsystem is configured.  *Note: This does not check
-the new PulseAudio sound system at this point. 
-
-If you wish to build remove from source, execute "./nwmovies_install.pl build"
-and it will attempt to build NWMovies from source as well as check 
-some sound card configuration.
-
-See "nwmovies.README.soundcards.txt" for further documentation, and
-suggestions.
-
-*) Download and install FFMpeg (or libav).
-
-This should be available for all Linux distributions as a native package.
-Note for FFMpeg versions earlier than 1.1, bug 1935 caused Bink movies not
-to automatically exit at their end so just press any key or mouse button
-to exit the movie player as normal.
+*) Install nwmovies. (building from source)
+   ./nwmovies/nwmovies_install.pl build
 
 *) Install your movies.    
 
@@ -119,7 +108,6 @@ wish to edit the LD_LIBRARY_PATH setting in 'nwn' as well to remove the
 "./lib:" entry.
 
 *) Run NWN.
- 
 	./nwn
 
 If you have edited the nwn script appropriately, the first time you run
@@ -211,6 +199,15 @@ issues with ffplay.
 export NWMOVIES_PLAY_COMMAND="mpv --fullscreen --keep-open=no" \
         "--no-config --no-input-cursor --no-osc --no-terminal" \
         "--osd-level=0"
+
+2024/10/13 - There was a recommendation to attempt a steamdeck utility
+named 'gamescope' by Unaccounted4 on GitHub, by modifying the NWN script 
+to set the H/W options appropriately. 
+
+    gamescope -H 1080 -f -- ./nwmain $@
+
+Unfortunately, all my Linux systems are VM's, and gamescope is not 
+VM friendly, so I cant comment on its effectiveness. 
 
 ---------------------------------------------------------------------------
 Additional variables:
