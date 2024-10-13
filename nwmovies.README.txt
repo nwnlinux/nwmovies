@@ -139,6 +139,7 @@ for further documentation.
 Further Documentation: 
 
 ---------------------------------------------------------------------------
+
 Skipping specific movies: 
 
 If you wish to skip specific movies, while leaving others enabled to be 
@@ -224,6 +225,43 @@ of the log file, any issues will be easily identifiable, and quickly
 resolveable. 
 
 ---------------------------------------------------------------------------
+
+32bit libraries for 64bit systems (Ubuntu) 
+
+Since I was testing the latest build on a shiny new 64bit Ubuntu system.
+These were the packages I needed to add to it to build NWMovies.
+
+And the order I added/removed things, since I didn't get it right the 
+first try.   ( I do not recommend following these instructions, as
+there is something seriously wrong here. )
+
+# dpkg --add-architecture i386
+# apt-get install libc6:i386
+# apt-get install libgl1:i386
+# apt-get install libglu1-mesa:i386
+# apt-get install libsdl1.2-compat:i386
+
+The five lines above should be minimum to get NWN to execute with
+pre-built NWMovies libraries.
+
+To utilize the default ffplay movie player: 
+
+# apt-get install ffmpeg
+
+Building NWMovies under 64bit Ubuntu:
+
+# apt-get install gcc
+# apt-get install gcc-i686-linux-gnu
+# apt-get install libc6-dev:i386
+# apt-get install gcc-multilib
+
+# Installation of libsd1.2-compat-dev creates some really bad autoremoves, 
+# DO NOT DO IT. It looks like it'll break your system good....
+
+# apt-get install libsdl1.2-compat-dev:i386
+# apt-get install libelf-dev:i386
+
+---------------------------------------------------------------------------
 Other issues: 
 
 Please feel free to contact me via the Bioware forums, or at my gmail.com 
@@ -244,9 +282,6 @@ Known Issues/Bugs/Comments:
 The main menu music does not work after starting NWN w/ NWMovies.
 Entering the game, and backing out to the main menu, the music works.
 Known issue, no known cause, nor resolution. 
-
-
-
 
 Standard Legal Stuff: 
 ---------------------------------------------------------------------------
