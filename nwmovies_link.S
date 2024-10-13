@@ -44,3 +44,5 @@ NWMovies_link_exit_jmp:
 	.type	_NWMovies_ESI, @object
 	.size	_NWMovies_ESI, 4
 _NWMovies_ESI: 	.long 0xdeadbeef
+
+.section .note.GNU-stack,"",@progbits
