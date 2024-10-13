@@ -1,3 +1,8 @@
+This information is old, but left here for historical (hysterical?)
+purposes..
+
+----------------------------------------------------------------------------
+
 These are some notes regarding NWN, and the various options for sound. 
 
 Linux has multiple different ways to output sound, all with various
