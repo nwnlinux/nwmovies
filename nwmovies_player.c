@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <pwd.h>
+#include <assert.h>
 
 #include "nwmovies.h"
 
@@ -103,8 +104,8 @@ static char *NWMovies_findmoviefile(const char *movietitle)
 	char tmp[128];
 	char *filename = NULL;
 
-	/* Original NWN oonly supports Bink movies */
-	snprintf(tmp, 128, "%s.bik" , movietitle);
+	/* Original NWN only supports Bink movies */
+	assert( snprintf(tmp, 128, "%s.bik" , movietitle) >= 0 ); 
 
 	/* Current working directory should be game or NWUser override
 	 * directory */
@@ -169,14 +170,14 @@ void NWMovies_runcommand(const char *movietitle)
 
 	command[0] = '\0';
 	if (nwuser == NW_PRELOAD_NWUSER) {
-		snprintf(moviepath, 256, "%s/.nwn/movies/%s", homedir, moviefile);
+		assert( snprintf(moviepath, 256, "%s/.nwn/movies/%s", homedir, moviefile) >= 0 );
 		/* NWUser override ignores absolute paths */
 		if (!stat(moviepath, &statbuf))
 			if (S_ISREG(statbuf.st_mode))
-				snprintf(command, 256, "%s %s", player, moviepath);
+				assert( snprintf(command, 256, "%s %s", player, moviepath) >= 0 );
 	}
 	if (command[0] == '\0')
-		snprintf(command, 256, "%s movies/%s", player, moviefile);
+		assert( snprintf(command, 256, "%s movies/%s", player, moviefile) >= 0 );
 
 	NWMovies_log(0, "NOTICE: NWMovies: Running command \"%s\"\n", command);
 	err = system(command);

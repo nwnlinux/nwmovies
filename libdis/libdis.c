@@ -1,6 +1,8 @@
 #include "libdis.h"
 #include "i386.h"
 
+#include <assert.h>
+
 struct addr_exp _libdis_exp[3];		/* one for dest, src, and aux in struct code */
 int assembler_format;
 struct EXT__ARCH ext_arch;
@@ -117,18 +119,18 @@ int sprint_addrexp(char *str, int len, struct addr_exp *e)
 	case NATIVE_SYNTAX:
 	default:
 		if (scale[0] && index[0])
-			snprintf(idx, 16, "(%s*%s)", scale, index);
+			assert( snprintf(idx, 16, "(%s*%s)", scale, index) >= 0 );
 		else if (index[0])
-			snprintf(idx, 16, "%s", index);
+			assert( snprintf(idx, 16, "%s", index) >= 0 );
 
 		if (base[0]) {
-			snprintf(str, len, "[%s", base);
+			assert( snprintf(str, len, "[%s", base) >= 0 );
 			if (idx[0]) {
 				strncat(str, "+", len - strlen(str));
 				strncat(str, idx, len - strlen(str));
 			}
 			if (disp[0]) {
-				snprintf(tmp, 32, "%c%s", sd, disp);
+				assert( snprintf(tmp, 32, "%c%s", sd, disp) >= 0 );
 				strncat(str, tmp, len - strlen(str));
 			}
 			strncat(str, "]", len - strlen(str));
@@ -261,19 +263,20 @@ int disassemble_address(unsigned char *buf, struct instr *i)
 	return (size);
 }
 
-int sprint_address(char *str, int len, unsigned char *buf)
-{
-	struct instr i;
-	int size;
-
-	size = disassemble_address(buf, &i);
-	snprintf(str, len, "%s\t%s", i.mnemonic, i.dest);
-	if (i.src[0])
-		snprintf(str, len - strlen(str), "%s, %s", str, i.src);
-	if (i.aux[0])
-		snprintf(str, len - strlen(str), "%s, %s", str, i.aux);
-	return (size);
-}
+// Unused, and triggers an overlap warning.
+// int sprint_address(char *str, int len, unsigned char *buf)
+// {
+// 	struct instr i;
+// 	int size;
+// 
+// 	size = disassemble_address(buf, &i);
+// 	snprintf(str, len, "%s\t%s", i.mnemonic, i.dest);
+// 	if (i.src[0])
+// 		snprintf(str, len - strlen(str), "%s, %s", str, i.src);
+// 	if (i.aux[0])
+// 		snprintf(str, len - strlen(str), "%s, %s", str, i.aux);
+// 	return (size);
+// }
 
 int vm_add_regtbl_entry(int index, char *name, int size, int type)
 {
