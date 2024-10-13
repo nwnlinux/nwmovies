@@ -235,31 +235,31 @@ And the order I added/removed things, since I didn't get it right the
 first try.   ( I do not recommend following these instructions, as
 there is something seriously wrong here. )
 
-# dpkg --add-architecture i386
-# apt-get install libc6:i386
-# apt-get install libgl1:i386
-# apt-get install libglu1-mesa:i386
-# apt-get install libsdl1.2-compat:i386
+ dpkg --add-architecture i386
+ apt-get install libc6:i386
+ apt-get install libgl1:i386
+ apt-get install libglu1-mesa:i386
+ apt-get install libsdl1.2-compat:i386
 
 The five lines above should be minimum to get NWN to execute with
 pre-built NWMovies libraries.
 
 To utilize the default ffplay movie player: 
 
-# apt-get install ffmpeg
+ apt-get install ffmpeg
 
 Building NWMovies under 64bit Ubuntu:
 
-# apt-get install gcc
-# apt-get install gcc-i686-linux-gnu
-# apt-get install libc6-dev:i386
-# apt-get install gcc-multilib
+ apt-get install gcc
+ apt-get install gcc-i686-linux-gnu
+ apt-get install libc6-dev:i386
+ apt-get install gcc-multilib
 
-# Installation of libsd1.2-compat-dev creates some really bad autoremoves, 
-# DO NOT DO IT. It looks like it'll break your system good....
+Installation of libsd1.2-compat-dev creates some really bad autoremoves, 
+DO NOT DO IT. It looks like it'll break your system good....
 
-# apt-get install libsdl1.2-compat-dev:i386
-# apt-get install libelf-dev:i386
+ apt-get install libsdl1.2-compat-dev:i386
+ apt-get install libelf-dev:i386
 
 ---------------------------------------------------------------------------
 Other issues: 
