@@ -1,3 +1,29 @@
+START 10/12/24 Notes.
+
+Code cleanups:
+
+Code build script to not link against static libelf, as modern 
+distros (Fedora 40) do not provide a 32bit static libelf. 
+
+Other snprintf warnings cleanup:   Failure to check the exit
+status of snprintf() generates warnings.  Simply use assert() 
+and check that snprintf isn't returning an error (eg < 0), to
+eliminate the warnings, since if snprintf failed, something 
+is very seriously wrong. 
+
+Remove an unused function in libdis that was warning about 
+overlapping arguments.
+
+Rewrite the linkage routine, and memory setup routine to deal
+the DT_TEXTREL warnings in the code, indicating there were 
+relocations inside the readonly text code segment.
+
+This requires the code to play linker and update 3 locations in the 
+linkage code manually, as it appears I am unable to get 
+the assembler, C source code, and ASLR to play nice together. 
+
+END 10/12/24 Notes
+
 START 06/14/13 Notes.
 
 Use internal parsing instead of calling external nwinstall.pl script. On 64-bit
