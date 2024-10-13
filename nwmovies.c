@@ -82,41 +82,55 @@
 static int _NWMovies_Current_Grab_Mode = SDL_GRAB_OFF; 		// Presumably the grab is off at start.
 static int _NWMovies_NeedsToggle = 0; 
 
-/* External functions we link in. */
+/* External functions linked in */
 static int          (*sdl_wm_grabinput_ptr)(int) = NULL;
 static SDL_Surface *(*sdl_getvideosurface_ptr)(void) = NULL;
 static int          (*sdl_wm_togglefullscreen_ptr)(SDL_Surface *) = NULL; 
 static int          (*sdl_pollevent_ptr)(SDL_Event *event) = NULL; 
 static int          (*sdl_wm_iconifywindow_ptr)(void) = NULL;
 
-unsigned long _NWM_movie_retaddr = 0x0;  /* modified by setup_memory() */
+extern unsigned long _NWMovies_ESI;	/* playmovie routine, ESI contains movie name */
+unsigned long _NWM_movie_retaddr;  	/* modified by setup_memory(), and stored in the linkage routine */
+
+extern void NWMovies_link_store_ESI(void);	/* label that points to the ESI store code */
+extern void NWMovies_link_playmovie2(void);	/* label that points to the playmovie2 call */
+extern void NWMovies_link_exit_jmp(void);	/* label that points to the exit jump */
 
 void NWMovies_Ungrab(void);
 void NWMovies_RestoreGrab(void);
-void NWMovies_setup_memory(unsigned int patch0, unsigned int patch1, unsigned int patch2, unsigned int patch3, unsigned int patch4, 
-				unsigned int patch5, unsigned int patch6); 
+void NWMovies_setup_memory(unsigned int patch0, /* CClientExoApp::GetDisableMovies(void):      modify last instruction to be 'mov $0x0, $eax'  (return 0) */
+			   unsigned int patch1, /* CClientExoApp::GetDisableIntroMovies(void): modify last instruction to be 'mov $0x0, $eax'  (return 0) */
+			   unsigned int patch2, 
+			   unsigned int patch3, 
+			   unsigned int patch4, 
+			   unsigned int patch5, 		/* Enable movie button */
+			   unsigned int patch6); 		/* Enable movie button */
 void NWMovies_printdata(char *ptr, int len);
 void NWMovies_memcpy(unsigned char *dest,  unsigned char *src, size_t n);
 extern void NWMovies_playmovie(void); 
-unsigned int *NWMovies_findcookie(char *file);
+unsigned int *NWMovies_findcookie(char *file);			/* Finds the patch addresses inside the executable. */
 void NWMovies_runcommand(char *title);
+void NWMovies_playmovie2(void);
 
 void NWMovies_log(const int echo, const char *fmt, ...)
 {
-	static FILE *fp;
+	static FILE *fp = NULL;
 	va_list arg_list;
 
 	if (!fp) 
-		fp = fopen(_NWMOVIES_LOGFILE, "a");
+		fp = fopen(_NWMOVIES_LOGFILE, "w");
 
 	va_start(arg_list, fmt);
 	if (fp) {
 		vfprintf(fp, fmt, arg_list);
+#ifndef DEBUG
 		if (echo)
+#endif
 			vfprintf(stderr, fmt, arg_list);
 	} else
 		vfprintf(stderr, fmt, arg_list);
 	va_end(arg_list);
+	fflush( fp ); 
 }
 
 // Initialize constructor attribute so we get called during executable startup.
@@ -146,7 +160,6 @@ void NWMovies_Initialize(void)
 
 	self_handle = dlopen("", RTLD_NOW | RTLD_GLOBAL); 
 
-
 	self_ptr = dlsym(self_handle, "_init"); 
 	if( self_ptr == NULL || dladdr( self_ptr, &info ) <= 0 ) { 
 		NWMovies_log(1, "ERROR: NWMovies: dladdr(self: _init): %s\n", dlerror()); 
@@ -161,12 +174,7 @@ void NWMovies_Initialize(void)
 	dlclose(self_handle);
 
 	/* Spit out a version number and reset log file */
-	fprintf(stderr, "NOTICE: NWMovies: Version: %s (Binary = %s)\n", _NWMOVIES_VERSION, info.dli_fname); 
-	if ((fp = fopen(_NWMOVIES_LOGFILE, "w"))) {
-		fprintf(fp, "NOTICE: NWMovies: Version: %s (Binary = %s)\n", _NWMOVIES_VERSION, info.dli_fname);
-		fclose(fp);
-	}
-
+	NWMovies_log(1, "NOTICE: NWMovies: Version: %s (Binary = %s)\n", _NWMOVIES_VERSION, info.dli_fname); 
 	NWMovies_log(0, "NOTICE: NWMovies: Looking up symbols in libSDL.....\n"); 
 
 /* try to lookup libSDL functions via RTLD_NEXT, and if that doesn't work, 
@@ -429,11 +437,22 @@ void NWMovies_RestoreGrab(void)
 	}
 }
 
-void NWMovies_setup_memory(unsigned int patch0, unsigned int patch1, unsigned int patch2, unsigned int patch3, unsigned int patch4, unsigned int patch5, unsigned int patch6)
+void NWMovies_setup_memory(unsigned int patch0, 
+			   unsigned int patch1, 
+			   unsigned int patch2, 
+			   unsigned int patch3, 
+			   unsigned int patch4, 
+		 	   unsigned int patch5, 		/* Enable movie button */
+		           unsigned int patch6)			/* Enable movie button */
 {
 	unsigned char	instruction[5]; 			/* 5 byte instruction */
-	long	address_offset; 
-	int	i,j; 
+	unsigned long	address_offset; 
+	int		i,j; 
+
+/* 2024/10/13 -- link code patching */
+	void 		*memory_address; 
+	void		*code_address; 
+	unsigned long	memory_value; 
 
 	unsigned char    patch0_code[]   = "\xb8\x00\x00\x00\x00\x90\x5d\xc3"; /* These must be a multiple of 4 bytes */
 	unsigned char    patch1_code[]   = "\xb8\x00\x00\x00\x00\x90\x5d\xc3";
@@ -492,20 +511,85 @@ void NWMovies_setup_memory(unsigned int patch0, unsigned int patch1, unsigned in
 	}
 	NWMovies_log(0, "\n"); 
 
+/* Patch 4 */
 	NWMovies_log(0, "NOTICE: NWMovies: PrePatch4: "); 
 	NWMovies_printdata((void *)patch4, 5); 
 	NWMovies_log(0, "\n"); 
 
+	/* Build instruction */
 	address_offset = (unsigned long) &NWMovies_playmovie;
-	address_offset = address_offset - (unsigned long) patch4 - 5; /* How many bytes should the jump be */
+	address_offset = address_offset - (unsigned long) patch4 - 5; 		/* How many bytes should the jump be */
 	memcpy(instruction + 1, &address_offset, 4); 
 	instruction[0] = '\xe9'; 
+
+	/* Store instruction */
 	NWMovies_memcpy((void *)patch4, instruction, 5); 			/* Put the jump in */
 	_NWM_movie_retaddr = (unsigned long)patch4 + 0x5; 			/* setup return address */
 
 	NWMovies_log(0, "NOTICE: NWMovies: PostPatch4: "); 
 	NWMovies_printdata((void *)patch4, 5); 
 	NWMovies_log(0, "\n"); 
+
+/* 2024/10/13 -- Pretend like were the linker, since getting assembler, the linker, and ASLR all friendly seems to be beyond my ken. 
+   2024/10/13 -- patch nwmovies_link code #1 -- ESI storage */
+	memory_address = &_NWMovies_ESI; 					/* Where do we store the ESI variable? */
+	code_address   = &NWMovies_link_store_ESI;				/* Address where the ESI variable is */
+	NWMovies_log(0, "NOTICE: NWMovies: PreLinkage Patch 1 (ESI): Code: 0x%08x: (New Address: 0x%08x): ", code_address, memory_address); 
+	NWMovies_printdata((void *)code_address, 5); 
+	NWMovies_log(0, "\n"); 
+
+	/* Build instruction */
+	memcpy(instruction + 1, &memory_address, 4); 
+	instruction[0] = '\xb8'; 
+
+	/* Store instruction */
+	NWMovies_memcpy((void *)code_address, instruction, 5); 			/* Insert the new code */
+
+	NWMovies_log(0, "NOTICE: NWMovies: PostLinkage Patch 1 (ESI): Code: 0x%08x: ", code_address); 
+	NWMovies_printdata((void *)code_address, 5); 
+	NWMovies_log(0, "\n"); 
+
+/* 2024/10/13 -- patch nwmovies_link code #2 -- our playmovie2 call. */
+	memory_address = &NWMovies_playmovie2; 						/* address of working play movie funciton */
+	code_address   = &NWMovies_link_playmovie2;					/* Address of the call. */
+	memory_value = memory_address - code_address - 5;				/* -5 address offset for size of call */
+
+	NWMovies_log(0, "NOTICE: NWMovies: PreLinkage Patch 2 (Play Call): Code: 0x%08x: (New code called: 0x%08x, Offset: 0x%08x): ", code_address, memory_address, memory_value ); 
+	NWMovies_printdata((void *)code_address, 5); 
+	NWMovies_log(0, "\n"); 
+
+	/* Build instruction */
+	memcpy(instruction + 1, &memory_value, 4); 
+	instruction[0] = '\xe8'; 
+
+	/* Store instruction */
+	NWMovies_memcpy((void *)code_address, instruction, 5); 			/* Insert the new code */
+
+	NWMovies_log(0, "NOTICE: NWMovies: PostLinkage Patch 2 (Play Call): Code: 0x%08x: ", code_address); 
+	NWMovies_printdata((void *)code_address, 5); 
+	NWMovies_log(0, "\n"); 
+
+/* 2024/10/13 -- patch nwmovies_link code #3 -- the jmp at exit. */
+	memory_address = &_NWM_movie_retaddr; 					/* Indirect jump through retaddr */
+	code_address   = &NWMovies_link_exit_jmp;				/* Address where the exit jump is */
+	NWMovies_log(0, "NOTICE: NWMovies: PreLinkage Patch 3 (exit JMP): Code: 0x%08x: (New Address: 0x%08x): ", code_address, memory_address); 
+	NWMovies_printdata((void *)code_address, 6); 
+	NWMovies_log(0, "\n"); 
+
+	/* Build instruction -- of course the indirect jump is one byte bigger than our instruction array */
+	/* so, carefully only store the last 5 bytes, and storage is one address greater than memory_address */
+	memcpy(instruction + 1, &memory_address, 4); 
+	instruction[0] = '\x25'; 
+
+	/* Store instruction */
+	NWMovies_memcpy((void *)code_address+1, instruction, 5); 			/* Insert the new code */
+
+	NWMovies_log(0, "NOTICE: NWMovies: PostLinkage Patch 3 (exit JMP): Code: 0x%08x: ", code_address); 
+	NWMovies_printdata((void *)code_address, 5); 
+	NWMovies_log(0, "\n"); 
+
+
+/* Enable movie buttons - maybe */
 
 	if( patch5 != 0 && patch5 != 1 && patch6 != 0 && patch6 != 1 ) { 
 		NWMovies_log(0, "NOTICE: NWMovies: MoviesPrePatch: "); 
@@ -559,8 +643,6 @@ void NWMovies_memcpy(unsigned char *dest, unsigned char *src, size_t n)
 		exit(-1); 
 	}
 }
-
-unsigned long	_NWMovies_ESI;
 
 void NWMovies_playmovie2(void)
 {	
