@@ -93,10 +93,13 @@ int *NWMovies_findcookie(char *filename)
 	int			(*disassemble_cleanup_ptr)(void); 
 	void			*dlhandle; 
 
-	dlhandle = dlopen("lib/libdisasm.so", RTLD_NOW); 
+	dlhandle = dlopen("nwmovies/libdis/libdisasm.so", RTLD_NOW); 
 	if( !dlhandle ) { 
-		fprintf(stderr, "ERROR: NWMovies: (cookie) dlopen of libdisasm.so failed: %s\n", dlerror()); 
-		abort(); 
+		dlhandle = dlopen("libdis/libdisasm.so", RTLD_NOW); 
+		if( !dlhandle ) { 
+			fprintf(stderr, "ERROR: NWMovies: (cookie) dlopen of libdisasm.so failed: %s\n", dlerror()); 
+			abort(); 
+		}
 	}
 
 	disassemble_init_ptr = dlsym(dlhandle, "disassemble_init"); 
