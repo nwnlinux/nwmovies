@@ -4,3 +4,6 @@ nwmovies_link.o
 nwmovies_lookup.o
 nwmovies_player.o
 nwmovies.log
+link-test-link-test.*
+core.*
+*.swp
