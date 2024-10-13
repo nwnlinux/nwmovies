@@ -130,6 +130,7 @@ for( $i = 0; $i < scalar(@objectList); $i++ ) {
 printf("NOTICE: Removing intermediate object file: %s/nwmovies_link.o\n", $ndir);
 unlink($ndir . "/nwmovies_link.o");
 
+printf("\n"); 
 do_symlink($ndir); 
 
 printf("NOTICE: NWMovies: Please check for errors above\n");
